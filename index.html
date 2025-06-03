@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload & Storage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Upload Your Files</h1>
+        <div class="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+            <input type="file" id="fileInput" accept=".pdf,.docx" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer mb-4">
+            <button onclick="uploadFiles()" class="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition duration-300">Upload Files</button>
+        </div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Stored Files</h2>
+        <ul id="fileList" class="space-y-3"></ul>
+    </div>
+
+    <script>
+        // Load stored files on page load
+        window.onload = loadStoredFiles;
+
+        function uploadFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert('Please select at least one file.');
+                return;
+            }
+
+            for (let file of files) {
+                if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileData = {
+                            name: file.name,
+                            data: e.target.result,
+                            type: file.type
+                        };
+                        saveFile(fileData);
+                        displayFile(fileData);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert(`File ${file.name} is not a PDF or DOCX.`);
+                }
+            }
+            fileInput.value = ''; // Clear input
+        }
+
+        function saveFile(fileData) {
+            let storedFiles = JSON.parse(localStorage.getItem('storedFiles') || '[]');
+            storedFiles.push(fileData);
+            localStorage.setItem('storedFiles', JSON.stringify(storedFiles));
+        }
+
+        function loadStoredFiles() {
+            const storedFiles = JSON.parse(localStorage.getItem('storedFiles') || '[]');
+            storedFiles.forEach(file => displayFile(file));
+        }
+
+        function displayFile(fileData) {
+            const fileList = document.getElementById('fileList');
+            const li = document.createElement('li');
+            li.className = 'flex justify-between items-center p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition duration-200';
+            const link = document.createElement('a');
+            link.href = fileData.data;
+            link.download = fileData.name;
+            link.textContent = fileData.name;
+            link.className = 'text-indigo-600 font-medium hover:underline truncate max-w-[70%]';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.className = 'py-1 px-3 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition duration-200';
+            deleteBtn.onclick = () => deleteFile(fileData.name, li);
+            li.appendChild(link);
+            li.appendChild(deleteBtn);
+            fileList.appendChild(li);
+        }
+
+        function deleteFile(fileName, liElement) {
+            let storedFiles = JSON.parse(localStorage.getItem('storedFiles') || '[]');
+            storedFiles = storedFiles.filter(file => file.name !== fileName);
+            localStorage.setItem('storedFiles', JSON.stringify(storedFiles));
+            liElement.remove();
+        }
+    </script>
+</body>
+</html>
